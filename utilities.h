@@ -25,3 +25,24 @@ public:
 		return n;
 	}
 };
+
+class Keyboard
+{
+public:
+	static const int ENTER_KEY = 13;
+	static const int ESC_KEY = 27;
+
+	static int handle_keyboard()
+	{
+		while (true)
+		{
+			if (_kbhit())
+			{
+				int key = _getch();
+
+				if (key == ENTER_KEY || key == ESC_KEY)
+					return key;
+			}
+		}
+	}
+};

@@ -37,4 +37,7 @@ public:
 	{
 		return getDistance(ent1->getPos(), ent2->getPos());
 	}
+
+	int getWidth() { return width; }
+	int getHeight() { return height; }
 };

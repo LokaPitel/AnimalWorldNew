@@ -1,4 +1,5 @@
 #pragma once
+#include "utilities.h"
 
 class Position
 {
@@ -6,6 +7,8 @@ class Position
 	int y;
 
 public:
+	Position() : x(0), y(0) {}
+
 	Position(int x, int y) : x(x), y(y) {}
 
 	int getX() { return x; }
@@ -87,6 +90,8 @@ public:
 	void setHealth(int health_level) { health = health_level; }
 
 	void addHealth(int value) { health = Utility::limit(0, MAX_HEALTH, health + value); }
+	void addOld(int value) { old = Utility::limit(0, MAX_OLD, old + value); std::cout << "id: " << id << " old: " << old << "\n"; }
+	void addStarvation(int value) { old = Utility::limit(0, MAX_STARVATION, starvation + value); }
 
 	State getState() { return state; }
 	void setState(State state) { this->state = state; }
@@ -101,6 +106,8 @@ public:
 	virtual bool isPlant() { return 0; }
 };
 
+int Entity::currentId = 0;
+
 class Animal : public Entity
 {
 	int attack_force;
@@ -110,7 +117,7 @@ public:
 
 	Animal(int old_level, int starvation_level, int health_level, int attack, int xPos, int yPos) : 
 		Entity(old_level, starvation_level, health_level, xPos, yPos), attack_force(attack) {}
-	Animal(int xPos, int yPos) : Entity(0, 0, MAX_HEALTH, xPos, yPos), attack_force(MIN_ATTACK_FORCE) {}
+	Animal(int xPos, int yPos) : Entity(1, 1, MAX_HEALTH, xPos, yPos), attack_force(MIN_ATTACK_FORCE) {}
 
 	virtual bool isAnimal() { return 1; }
 };
@@ -125,7 +132,7 @@ public:
 		Animal(old_level, starvation_level, health_level, attack, xPos, yPos) {}
 	PlantEating(int xPos, int yPos) : Animal(xPos, yPos) {}
 
-	virtual bool isPlantEating() { return 1; }
+	virtual bool isPlantEating() { return true; }
 };
 
 class Predator : public Animal
@@ -140,15 +147,16 @@ public:
 	}
 	Predator(int xPos, int yPos) : Animal(xPos, yPos) {}
 
-	virtual bool isPredator() { return 1; }
+	virtual bool isPredator() { return true; }
 };
 
 class Food : public Entity
 {
 public:
 	Food(int old_level, int starvation_level, int health_level, int xPos, int yPos) : Entity(old_level, starvation_level, health_level, xPos, yPos) {}
-	Food(int xPos, int yPos) : Entity(0, 0, MAX_HEALTH, xPos, yPos) {}
+	Food(int xPos, int yPos) : Entity(1, 1, MAX_HEALTH, xPos, yPos) {}
 
+	virtual bool isFood() { return true; }
 };
 
 class PlantEatingFood : public Food
@@ -156,6 +164,8 @@ class PlantEatingFood : public Food
 public:
 	PlantEatingFood(int old_level, int starvation_level, int health_level, int xPos, int yPos) : Food(old_level, starvation_level, health_level, xPos, yPos) {}
 	PlantEatingFood(int xPos, int yPos) : Food(xPos, yPos) {}
+
+	virtual bool isPlantEatingFood() { return true; }
 };
 
 class PredatorFood : public Food
@@ -163,11 +173,15 @@ class PredatorFood : public Food
 public:
 	PredatorFood(int old_level, int starvation_level, int health_level, int xPos, int yPos) : Food(old_level, starvation_level, health_level, xPos, yPos) {}
 	PredatorFood(int xPos, int yPos) : Food(xPos, yPos) {}
+
+	virtual bool isPredatorFood() { return true; }
 };
 
 class Plant : public Entity
 {
 public:
 	Plant(int old_level, int starvation_level, int health_level, int xPos, int yPos) : Entity(old_level, starvation_level, health_level, xPos, yPos) {}
-	Plant(int xPos, int yPos) : Entity(0, 0, xPos, yPos) {}
+	Plant(int xPos, int yPos) : Entity(1, 1, MAX_HEALTH, xPos, yPos) {}
+
+	virtual bool isPlant() { return true; }
 };
