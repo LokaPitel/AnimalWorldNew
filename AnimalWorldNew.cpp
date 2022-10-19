@@ -1,5 +1,7 @@
 #include <iostream>
+#include <cstdlib>
 #include <vector>
+#include <set>
 #include <random>
 #include <cassert>
 #include <chrono>
@@ -66,6 +68,58 @@ class Game
 
 		Map& getMap() { return map; }
 
+		bool isPositionFree(int xPos, int yPos)
+		{
+			bool free = true;
+
+			for (auto item : entities)
+			{
+				if (item->getX() == xPos && item->getY() == yPos)
+				{
+					free = false;
+					break;
+				}
+			}
+
+			return free;
+		}
+		bool isPositionFree(Position pos) { return isPositionFree(pos.getX(), pos.getY()); }
+
+		bool getFreePositionAround(int xPos, int yPos, int& freeX, int& freeY)
+		{
+			for (int i = 0; i < 2; i++)
+			{
+				freeX = xPos + std::pow(-1, i);
+				freeY = yPos;
+
+				if (isPositionFree(freeX, freeY))
+					return true;
+			}
+
+			for (int i = 0; i < 2; i++)
+			{
+				freeX = xPos;
+				freeY = yPos + std::pow(-1, i);
+
+				if (isPositionFree(freeX, freeY))
+					return true;
+			}
+
+			return false;
+		}
+		bool getFreePositionAround(int xPos, int yPos, Position& pos)
+		{
+			int tmpX;
+			int tmpY;
+
+			bool result = getFreePositionAround(xPos, yPos, tmpX, tmpY);
+
+			pos.setX(tmpX);
+			pos.setY(tmpY);
+
+			return result;
+		}
+
 		Entity* getClosestPlant(Entity& ent)
 		{
 			Entity* closest = nullptr;
@@ -75,14 +129,15 @@ class Game
 			{
 				Entity* other = entities[i];
 
-				if (!closest && other->isPlant())
+				if (!other->isPlant())
+					continue;
+
+				if (!closest)
 				{
 					closest = other;
 					closestDistance = map.getDistance(*closest, ent);
-				}
-
-				if (!closest)
 					continue;
+				}
 
 				int distance = map.getDistance(*other, ent);
 
@@ -107,14 +162,15 @@ class Game
 			{
 				Entity* other = entities[i];
 
-				if (!closest && other->isPlantEatingFood())
+				if (!other->isPlantEatingFood())
+					continue;
+
+				if (!closest)
 				{
 					closest = other;
 					closestDistance = map.getDistance(*closest, ent);
-				}
-
-				if (!closest)
 					continue;
+				}
 
 				int distance = map.getDistance(*other, ent);
 
@@ -139,14 +195,15 @@ class Game
 			{
 				Entity* other = entities[i];
 
-				if (!closest && other->isPredatorFood())
+				if (!other->isPredatorFood())
+					continue;
+
+				if (!closest)
 				{
 					closest = other;
 					closestDistance = map.getDistance(*closest, ent);
-				}
-
-				if (!closest)
 					continue;
+				}
 
 				int distance = map.getDistance(*other, ent);
 
@@ -171,14 +228,15 @@ class Game
 			{
 				Entity* other = entities[i];
 
-				if (!closest && other->isPlantEating())
+				if (!other->isPlantEating())
+					continue;
+
+				if (!closest)
 				{
 					closest = other;
 					closestDistance = map.getDistance(*closest, ent);
-				}
-
-				if (!closest)
 					continue;
+				}
 
 				int distance = map.getDistance(*other, ent);
 
@@ -203,14 +261,248 @@ class Game
 			{
 				Entity* other = entities[i];
 
-				if (!closest && other->isPredator())
+				if (!other->isPredator())
+					continue;
+
+				if (!closest)
 				{
 					closest = other;
 					closestDistance = map.getDistance(*closest, ent);
+					continue;
 				}
 
-				if (!closest)
+				int distance = map.getDistance(*other, ent);
+
+				if (distance < closestDistance)
+				{
+					closest = other;
+					closestDistance = distance;
+				}
+			}
+
+			if (closest == &ent)
+				return nullptr;
+
+			return closest;
+		}
+
+		Entity* getClosestLivingPlant(Entity& ent)
+		{
+			Entity* closest = nullptr;
+			int closestDistance;
+
+			for (int i = 0; i < entities.size(); i++)
+			{
+				Entity* other = entities[i];
+
+				if (!other->isPlant() || other->isDying())
 					continue;
+
+				if (!closest)
+				{
+					closest = other;
+					closestDistance = map.getDistance(*closest, ent);
+					continue;
+				}
+
+				int distance = map.getDistance(*other, ent);
+
+				if (distance < closestDistance)
+				{
+					closest = other;
+					closestDistance = distance;
+				}
+			}
+
+			if (closest == &ent)
+				return nullptr;
+
+			return closest;
+		}
+		Entity* getClosestLivingPlantEatingFood(Entity& ent)
+		{
+			Entity* closest = nullptr;
+			int closestDistance;
+
+			for (int i = 0; i < entities.size(); i++)
+			{
+				Entity* other = entities[i];
+
+				if (!other->isPlantEatingFood() || other->isDying())
+					continue;
+
+				if (!closest)
+				{
+					closest = other;
+					closestDistance = map.getDistance(*closest, ent);
+					continue;
+				}
+
+				int distance = map.getDistance(*other, ent);
+
+				if (distance < closestDistance)
+				{
+					closest = other;
+					closestDistance = distance;
+				}
+			}
+
+			if (closest == &ent)
+				return nullptr;
+
+			return closest;
+		}
+		Entity* getClosestLivingPredatorFood(Entity& ent)
+		{
+			Entity* closest = nullptr;
+			int closestDistance;
+
+			for (int i = 0; i < entities.size(); i++)
+			{
+				Entity* other = entities[i];
+
+				if (!other->isPredatorFood() || other->isDying())
+					continue;
+
+				if (!closest)
+				{
+					closest = other;
+					closestDistance = map.getDistance(*closest, ent);
+					continue;
+				}
+
+				int distance = map.getDistance(*other, ent);
+
+				if (distance < closestDistance)
+				{
+					closest = other;
+					closestDistance = distance;
+				}
+			}
+
+			if (closest == &ent)
+				return nullptr;
+
+			return closest;
+		}
+		Entity* getClosestLivingPlantEating(Entity& ent)
+		{
+			Entity* closest = nullptr;
+			int closestDistance;
+
+			for (int i = 0; i < entities.size(); i++)
+			{
+				Entity* other = entities[i];
+
+				if (!other->isPlantEating() || other->isDying())
+					continue;
+
+				if (!closest)
+				{
+					closest = other;
+					closestDistance = map.getDistance(*closest, ent);
+					continue;
+				}
+
+				int distance = map.getDistance(*other, ent);
+
+				if (distance < closestDistance)
+				{
+					closest = other;
+					closestDistance = distance;
+				}
+			}
+
+			if (closest == &ent)
+				return nullptr;
+
+			return closest;
+		}
+		Entity* getClosestLivingPredator(Entity& ent)
+		{
+			Entity* closest = nullptr;
+			int closestDistance;
+
+			for (int i = 0; i < entities.size(); i++)
+			{
+				Entity* other = entities[i];
+
+				if (!other->isPredator() || other->isDying())
+					continue;
+
+				if (!closest)
+				{
+					closest = other;
+					closestDistance = map.getDistance(*closest, ent);
+					continue;
+				}
+
+				int distance = map.getDistance(*other, ent);
+
+				if (distance < closestDistance)
+				{
+					closest = other;
+					closestDistance = distance;
+				}
+			}
+
+			if (closest == &ent)
+				return nullptr;
+
+			return closest;
+		}
+
+		Entity* getClosestLivingReproducablePlantEating(Entity& ent)
+		{
+			Entity* closest = nullptr;
+			int closestDistance;
+
+			for (int i = 0; i < entities.size(); i++)
+			{
+				Entity* other = entities[i];
+
+				if (!other->isPlantEating() || other->isDying() || !other->isReproducable())
+					continue;
+
+				if (!closest)
+				{
+					closest = other;
+					closestDistance = map.getDistance(*closest, ent);
+					continue;
+				}
+
+				int distance = map.getDistance(*other, ent);
+
+				if (distance < closestDistance)
+				{
+					closest = other;
+					closestDistance = distance;
+				}
+			}
+
+			if (closest == &ent)
+				return nullptr;
+
+			return closest;
+		}
+		Entity* getClosestLivingReproducablePredator(Entity& ent)
+		{
+			Entity* closest = nullptr;
+			int closestDistance;
+
+			for (int i = 0; i < entities.size(); i++)
+			{
+				Entity* other = entities[i];
+
+				if (!other->isPredator() || other->isDying() || !other->isReproducable())
+					continue;
+
+				if (!closest)
+				{
+					closest = other;
+					closestDistance = map.getDistance(*closest, ent);
+					continue;
+				}
 
 				int distance = map.getDistance(*other, ent);
 
@@ -254,7 +546,7 @@ class Game
 		
 		virtual void render()
 		{
-			//system("cls");
+			system("cls");
 
 			std::vector<std::vector<char>> representation(getModel().getMap().getHeight());
 			for (int i = 0; i < representation.size(); i++)
@@ -292,7 +584,6 @@ class Game
 				//std::cout << representation[ent->getPos().getY() - 1][ent->getPos().getX() - 1] << "\n";
 			}
 
-
 			for (int i = 0; i < representation.size(); i++)
 			{
 				for (int j = 0; j < representation[0].size(); j++)
@@ -319,7 +610,17 @@ class Game
 		virtual void move(int xPos, int yPos) { ; }
 		virtual void eat(Entity* other) { ; }
 		virtual void reproduce(Entity* other) { ; }
-		virtual void die() { ; }
+		virtual void die() 
+		{ 
+			std::vector<Entity*>& entities = getModel().getEntities();
+
+			int pos;
+			for (pos = 0; pos < entities.size(); pos++)
+				if (entities[pos]->getId() == getSelf()->getId())
+					break;
+
+			entities.erase(entities.begin() + pos);
+		}
 		virtual void actReflexively()
 		{ ; }
 	};
@@ -347,84 +648,155 @@ class Game
 		{ 
 			if (other->isPlant())
 			{ 
-				getSelf()->addHealth(PlantEating::PLANT_EATING_HEALTH_ADDITION);
-				other->addHealth(-PlantEating::PLANT_EATING_HEALTH_ADDITION);
+				getSelf()->addHealth(Utility::limit(0, other->getHealth(), getSelf()->getPlantEatingHealthAddition()));
+				getSelf()->addStarvation(Utility::limit(0, other->getHealth(), -getSelf()->getPlantEatingHealthAddition()));
 
-				other->setState(State::STATES::ATTACKED);
+				other->addHealth(-getSelf()->getPlantEatingHealthAddition());
+				other->setAttacked();
 
-				if (other->getHealth() < 0)
-					other->setState(State::STATES::DYING);
+				if (other->getHealth() == 0)
+					other->setDying();
 			}
 
 			else if (other->isPlantEatingFood())
 			{
-				getSelf()->addHealth(PlantEating::FOOD_EATING_HEALTH_ADDITION);
-				other->addHealth(-PlantEating::FOOD_EATING_HEALTH_ADDITION);
+				getSelf()->addHealth(Utility::limit(0, other->getHealth(), getSelf()->getFoodEatingHealthAddition()));
+				getSelf()->addStarvation(Utility::limit(0, other->getHealth(), -getSelf()->getFoodEatingHealthAddition()));
+				other->addHealth(-getSelf()->getFoodEatingHealthAddition());
+				other->setAttacked();
 
-				other->setState(State::STATES::ATTACKED);
+				if (other->getHealth() == 0)
+					other->setDying();
+			}
+		}
+		virtual void reproduce(Entity* other)
+		{ 
+			Entity* self = getSelf();
 
-				if (other->getHealth() < 0)
-					other->setState(State::STATES::DYING);
+			Position freePos;
+
+			if (getModel().getFreePositionAround(self->getX(), self->getY(), freePos))
+			{
+				if (getModel().getMap().isValidPosition(freePos))
+					getModel().addPlantEating(freePos);
 			}
 		}
 
-		virtual void reproduce(Entity* other)
-		{ 
-			;
-		}
-		virtual void die() { ; }
-
 		virtual void actReflexively()
 		{
-			PlantEating* animal = static_cast<PlantEating*>(getSelf());
+			Entity* animal = getSelf();
 
 			int health = animal->getHealth();
 			int starvation_level = animal->getStarvation();
 			int old_level = animal->getOld();
 
-			// if (state is attacked) then run away
+			if (old_level == animal->getMaxOld())
+				animal->setDying();
 
-			if (starvation_level > Entity::DANGEROUS_STARVATION || health < Entity::SAFE_HEALTH_LEVEL) // If animal is starving then find food
+			else if (animal->isAttacked())
 			{
-				Entity* food = getModel().getClosestPlantEatingFood(*getSelf());
-				Entity* plant = getModel().getClosestPlant(*getSelf());
+				Entity* predator = getModel().getClosestLivingPredator(*getSelf());
 
-				int foodDistance = getModel().getMap().getDistance(food, getSelf());
-				int plantDistance = getModel().getMap().getDistance(plant, getSelf());
+				int predatorDistance = -1;
 
 				Entity* target = nullptr;
 
-				if (foodDistance < plantDistance)
+				if (predator)
+				{
+					predatorDistance = getModel().getMap().getDistance(predator, getSelf());
+					target = predator;
+				}
+
+				if (target)
+				{
+					int xDistance = Utility::limit(-1, 1, -(target->getX() - getSelf()->getX()));
+					int yDistance = Utility::limit(-1, 1, -(target->getY() - getSelf()->getY()));
+
+					if (Utility::abs(xDistance) > Utility::abs(yDistance))
+						getSelf()->setX(getSelf()->getX() + Utility::signum(xDistance));
+
+					else
+						getSelf()->setY(getSelf()->getY() + Utility::signum(yDistance));
+				}
+			}
+
+			else if (starvation_level > animal->getDangerousStarvation() || health < animal->getSafeHealthLevel()) // If animal is starving then find food
+			{
+				Entity* food = getModel().getClosestLivingPlantEatingFood(*getSelf());
+				Entity* plant = getModel().getClosestLivingPlant(*getSelf());
+
+				int foodDistance = -1;
+
+				if (food)
+					foodDistance = getModel().getMap().getDistance(food, getSelf());
+
+				int plantDistance = -1;
+
+				if (plant)
+					plantDistance = getModel().getMap().getDistance(plant, getSelf());
+
+				Entity* target = nullptr;
+
+				if (!food)
+					target = plant;
+
+				else if (!plant)
+					target = food;
+
+				else if (foodDistance < plantDistance)
 					target = food;
 
 				else
 					target = plant;
 
-				int xDistance = target->getX() - getSelf()->getX();
-				int yDistance = target->getY() - getSelf()->getY();
+				if (target)
+				{
+					int xDistance = target->getX() - getSelf()->getX();
+					int yDistance = target->getY() - getSelf()->getY();
 
-				if (xDistance == 0 || yDistance == 0) // If animal adjacent to target then eat it
-					eat(target);
+					if (xDistance == 0 && Utility::abs(yDistance) == 1 || Utility::abs(xDistance) == 1 && yDistance == 0) // If animal adjacent to target then eat it
+						eat(target);
 
-				else if (xDistance > yDistance)
-					getSelf()->setX(getSelf()->getX() + Utility::signum(xDistance));
+					else if (Utility::abs(xDistance) > Utility::abs(yDistance))
+						getSelf()->setX(getSelf()->getX() + Utility::signum(xDistance));
 
-				else
-					getSelf()->setY(getSelf()->getY() + Utility::signum(xDistance));
-			}
+					else
+						getSelf()->setY(getSelf()->getY() + Utility::signum(yDistance));
+				}
+			} 
 
-			else if (old_level > Entity::MAX_OLD) // If old is maximum level then animal has to die
+			else if (old_level >= animal->getMinReproductionOld() && old_level <= animal->getMaxReproductionOld()) // If all is ok then reproduce
 			{
-				// state equals dying
+				Entity* pair = getModel().getClosestLivingReproducablePlantEating(*getSelf());
+
+				int pairDistance = -1;
+
+				Entity* target = nullptr;
+
+				if (pair)
+				{
+					pairDistance = getModel().getMap().getDistance(pair, getSelf());
+					target = pair;
+				}
+
+				if (target)
+				{
+					int xDistance = target->getX() - getSelf()->getX();
+					int yDistance = target->getY() - getSelf()->getY();
+
+					if (xDistance == 0 && Utility::abs(yDistance) == 1 || Utility::abs(xDistance) == 1 && yDistance == 0) // If animal adjacent to target then eat it
+						reproduce(target);
+
+					else if (Utility::abs(xDistance) > Utility::abs(yDistance))
+						getSelf()->setX(getSelf()->getX() + Utility::signum(xDistance));
+
+					else
+						getSelf()->setY(getSelf()->getY() + Utility::signum(yDistance));
+				}
 			}
 
-			else if (old_level >= Entity::MIN_REPRODUCTION_OLD && old_level <= Entity::MAX_REPRODUCTION_OLD) // If all is ok then reproduce
-			{
-
-			}
-
-			animal->addOld(1);
-			animal->addStarvation(1);
+			animal->incOld();
+			animal->incStarvation();
 		}
 	};
 
@@ -435,17 +807,149 @@ class Game
 
 		virtual void eat(Entity* other)
 		{
-			;
+			if (other->isPlantEating())
+			{
+				getSelf()->addHealth(Utility::limit(0, other->getHealth(), getSelf()->getPlantEatingEatingHealthAddition()));
+				getSelf()->addStarvation(Utility::limit(0, other->getHealth(), -getSelf()->getPlantEatingEatingHealthAddition()));
+
+				other->addHealth(-getSelf()->getPlantEatingEatingHealthAddition());
+				other->setAttacked();
+
+				if (other->getHealth() == 0)
+					other->setDying();
+			}
+
+			else if (other->isPredatorFood())
+			{
+				getSelf()->addHealth(Utility::limit(0, other->getHealth(), getSelf()->getFoodEatingHealthAddition()));
+				getSelf()->addStarvation(Utility::limit(0, other->getHealth(), -getSelf()->getFoodEatingHealthAddition()));
+				getSelf()->addStarvation(-getSelf()->getFoodEatingHealthAddition());
+
+				other->addHealth(-getSelf()->getFoodEatingHealthAddition());
+				other->setAttacked();
+
+				if (other->getHealth() == 0)
+					other->setDying();
+			}
 		}
 
 		virtual void reproduce(Entity* right)
 		{
-			;
+			Entity* self = getSelf();
+
+			Position freePos;
+
+			if (getModel().getFreePositionAround(self->getX(), self->getY(), freePos))
+			{
+				if (getModel().getMap().isValidPosition(freePos))
+					getModel().addPredator(freePos);
+			}
 		}
-		virtual void die() { ; }
+		//virtual void die() { ; }
 
-		virtual void actReflexively() { ; }
+		virtual void actReflexively()
+		{ 
+			Predator* animal = static_cast<Predator*>(getSelf());
 
+			int health = animal->getHealth();
+			int starvation_level = animal->getStarvation();
+			int old_level = animal->getOld();
+
+			if (old_level == animal->getMaxOld())
+				animal->setDying();
+			
+			// if (state is attacked) then run away
+
+			else if (starvation_level > animal->getDangerousStarvation() || health < animal->getSafeHealthLevel()) // If animal is starving then find food
+			{
+				Entity* food = getModel().getClosestLivingPlantEatingFood(*getSelf());
+				Entity* plantEating = getModel().getClosestLivingPlantEating(*getSelf());
+
+				int foodDistance = -1;
+
+				if (food)
+					foodDistance = getModel().getMap().getDistance(food, getSelf());
+
+				int plantEatingDistance = -1;
+
+				if (plantEating)
+					plantEatingDistance = getModel().getMap().getDistance(plantEating, getSelf());
+
+				Entity* target = nullptr;
+
+				if (!food)
+					target = plantEating;
+
+				else if (!plantEating)
+					target = food;
+
+				else if (foodDistance < plantEatingDistance)
+					target = food;
+
+				else
+					target = plantEating;
+
+				if (target)
+				{
+					int xDistance = target->getX() - getSelf()->getX();
+					int yDistance = target->getY() - getSelf()->getY();
+
+					if (xDistance == 0 && Utility::abs(yDistance) == 1 || Utility::abs(xDistance) == 1 && yDistance == 0) // If animal adjacent to target then eat it
+						eat(target);
+
+					else if (Utility::abs(xDistance) > Utility::abs(yDistance))
+					{
+						getSelf()->setX(getSelf()->getX() + Utility::signum(xDistance));
+
+						//std::cout << "x offset\n";
+					}
+
+					else
+					{
+						getSelf()->setY(getSelf()->getY() + Utility::signum(yDistance));
+
+						//std::cout << "y offset\n";
+					}
+
+					/*std::cout << "id: " << getSelf()->getId() << " | Diff: " << xDistance << " " << yDistance << "\n";
+
+					std::cout << "target id: " << target->getId() << "\n";*/
+				}
+			}
+
+			else if (old_level >= animal->getMinReproductionOld() && old_level <= animal->getMaxReproductionOld()) // If all is ok then reproduce
+			{
+				Entity* pair = getModel().getClosestLivingReproducablePredator(*getSelf());
+
+				int pairDistance = -1;
+
+				Entity* target = nullptr;
+
+				if (pair)
+				{
+					pairDistance = getModel().getMap().getDistance(pair, getSelf());
+					target = pair;
+				}
+
+				if (target)
+				{
+					int xDistance = target->getX() - getSelf()->getX();
+					int yDistance = target->getY() - getSelf()->getY();
+
+					if (xDistance == 0 && Utility::abs(yDistance) == 1 || Utility::abs(xDistance) == 1 && yDistance == 0) // If animal adjacent to target then eat it
+						reproduce(target);
+
+					else if (Utility::abs(xDistance) > Utility::abs(yDistance))
+						getSelf()->setX(getSelf()->getX() + Utility::signum(xDistance));
+
+					else
+						getSelf()->setY(getSelf()->getY() + Utility::signum(yDistance));
+				}
+			}
+
+			animal->incOld();
+			animal->incStarvation();
+		}
 	};
 
 	class FoodController : public Controller
@@ -453,9 +957,15 @@ class Game
 	public:
 		FoodController(Model& model, Entity* food) : Controller(model, food) {}
 
-		virtual void die() { ; }
+		virtual void actReflexively() 
+		{
+			Entity* ent = getSelf();
 
-		virtual void actReflexively() { ; }
+			if (ent->getOld() == ent->getMaxOld())
+				ent->setDying();
+
+			ent->incOld();
+		}
 	};
 
 	class PlantController : public Controller
@@ -465,11 +975,41 @@ class Game
 
 		virtual void reproduce(Entity* right)
 		{
-			;
-		}
-		virtual void die() { ; }
+			Entity* self = getSelf();
 
-		virtual void actReflexively() { ; }
+			Position freePos;
+
+			if (getModel().getFreePositionAround(self->getX(), self->getY(), freePos))
+			{
+				if (getModel().getMap().isValidPosition(freePos))
+					getModel().addPlant(freePos);
+			}
+		}
+		//virtual void die() { ; }
+
+		virtual void actReflexively()
+		{ 
+			Entity* ent = getSelf();
+
+			int oldLevel = ent->getOld();
+
+			if (ent->isBorn())
+			{
+				ent->setMoving();
+				return;
+			}
+
+			if (oldLevel == ent->getMaxOld())
+				ent->setDying();
+
+			else if (oldLevel >= ent->getMinReproductionOld() && oldLevel <= ent->getMaxReproductionOld())
+			{
+				if (Utility::getRandomInt(0, 3) != 3)
+					reproduce(getSelf());
+			}
+
+			ent->incOld();
+		}
 	};
 
 private:
@@ -479,9 +1019,15 @@ private:
 public:
 	static const int INITIAL_PREDATOR_COUNT = 4;
 	static const int INITIAL_PLANTEATING_COUNT = 7;
-	static const int INITIAL_PLANT = 10;
+	static const int INITIAL_PLANT = 0;
 	static const int INITIAL_PLANT_FOOD_COUNT = 3;
 	static const int INITIAL_PREDATOR_FOOD_COUNT = 2;
+
+	/*static const int INITIAL_PREDATOR_COUNT = 1;
+	static const int INITIAL_PLANTEATING_COUNT = 1;
+	static const int INITIAL_PLANT = 1;
+	static const int INITIAL_PLANT_FOOD_COUNT = 0;
+	static const int INITIAL_PREDATOR_FOOD_COUNT = 0;*/
 
 	Game(int mapWidth, int mapHeight) : model(Model(mapWidth, mapHeight)), view(model)
 	{
@@ -493,72 +1039,79 @@ public:
 		for (int i = 0; i < mapHeight * mapWidth; i++)
 				freePositions[i] = Position(i % mapWidth + 1, i / mapWidth + 1);
 
-		std::random_device rd;
-		std::mt19937 gen(rd());
+		/*std::random_device rd;
+		std::mt19937 gen(rd());*/
 
 		for (int i = 0; i < INITIAL_PREDATOR_COUNT; i++)
 		{
-			std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
+			//std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
 
-			int random_index = distribution(gen);
+			int randomIndex = Utility::getRandomInt(0, freePositions.size() - 1);
 
-			Position pos = freePositions[random_index];
+			Position pos = freePositions[randomIndex];
 
 			model.addPredator(pos);
 
-			freePositions.erase(freePositions.begin() + random_index);
+			freePositions.erase(freePositions.begin() + randomIndex);
 		}
 
 		for (int i = 0; i < INITIAL_PLANTEATING_COUNT; i++)
 		{
-			std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
+			/*std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
 
-			int random_index = distribution(gen);
+			int random_index = distribution(gen);*/
+			int randomIndex = Utility::getRandomInt(0, freePositions.size() - 1);
 
-			Position pos = freePositions[random_index];
+			Position pos = freePositions[randomIndex];
 
 			model.addPlantEating(pos);
 
-			freePositions.erase(freePositions.begin() + random_index);
+			freePositions.erase(freePositions.begin() + randomIndex);
 		}
 
 		for (int i = 0; i < INITIAL_PLANT; i++)
 		{
-			std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
+			/*std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
 
-			int random_index = distribution(gen);
+			int random_index = distribution(gen);*/
+			int randomIndex = Utility::getRandomInt(0, freePositions.size() - 1);
 
-			Position pos = freePositions[random_index];
+			Position pos = freePositions[randomIndex];
 
 			model.addPlant(pos);
 
-			freePositions.erase(freePositions.begin() + random_index);
+			freePositions.erase(freePositions.begin() + randomIndex);
 		}
 
 		for (int i = 0; i < INITIAL_PLANT_FOOD_COUNT; i++)
 		{
-			std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
+			/*std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
 
-			int random_index = distribution(gen);
+			int random_index = distribution(gen);*/
 
-			Position pos = freePositions[random_index];
+			int randomIndex = Utility::getRandomInt(0, freePositions.size() - 1);
+
+			Position pos = freePositions[randomIndex];
 
 			model.addPlantEatingFood(pos);
 
-			freePositions.erase(freePositions.begin() + random_index);
+			freePositions.erase(freePositions.begin() + randomIndex);
 		}
 
 		for (int i = 0; i < INITIAL_PREDATOR_FOOD_COUNT; i++)
 		{
-			std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
+		/*	std::uniform_int_distribution<> distribution(0, freePositions.size() - 1);
 
-			int random_index = distribution(gen);
+			int random_index = distribution(gen);*/
 
-			Position pos = freePositions[random_index];
+			int randomIndex = Utility::getRandomInt(0, freePositions.size() - 1);
+
+
+			Position pos = freePositions[randomIndex];
 
 			model.addPredatorFood(pos);
 
-			freePositions.erase(freePositions.begin() + random_index);
+			freePositions.erase(freePositions.begin() + randomIndex);
 		}
 	}
 
@@ -581,7 +1134,7 @@ public:
 			last = now;
 
 			view.render(); // rendering map to console
-
+			
 			for (int i = 0; i < model.getEntities().size(); i++)
 			{
 				Controller* controller = nullptr;
@@ -597,19 +1150,32 @@ public:
 					controller = new FoodController(model, ent);
 				
 				else if (ent->isPlant())
-					controller = new PredatorController(model, ent);
+					controller = new PlantController(model, ent);
 
 				controller->actReflexively();
 			}
 
-			Keyboard::handle_keyboard();
+			auto it = model.getEntities().begin();
+			while (it != model.getEntities().end())
+			{
+				Entity* ent = *it;
+
+				if (ent->isDying())
+					it = model.getEntities().erase(it);
+
+				if (it != model.getEntities().end())
+					it++;
+			}
+
+			if (Keyboard::handle_keyboard() == Keyboard::ESC_KEY)
+				exit(0);
 		}
 	}
 };
 
 int main()
 {
-	Game game(10, 10);
+	Game game(30, 30);
 
 	game.run();
 

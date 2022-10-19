@@ -10,14 +10,14 @@ class Map
 public:
 	Map(int width_size, int height_size) : width(width_size), height(height_size) {}
 
-	bool is_valid_position(Position pos)
+	bool isValidPosition(Position pos)
 	{
 		return pos.getX() >= 1 && pos.getX() <= width && pos.getY() >= 1 && pos.getY() <= height;
 	}
 
 	int getDistance(Position pos1, Position pos2)
 	{
-		return std::sqrt(pos1.getX() * pos2.getX() + pos1.getY() * pos2.getY());
+		return std::sqrt(std::pow( (pos1.getX() - pos2.getX()), 2) + std::pow( (pos1.getY() - pos2.getY()), 2) );
 	}
 
 	int getDistance(int x1, int y1, int x2, int y2)

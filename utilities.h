@@ -1,6 +1,4 @@
 #pragma once
-
-
 class Utility
 {
 public:
@@ -23,6 +21,23 @@ public:
 			return max;
 
 		return n;
+	}
+	static int abs(int n)
+	{
+		if (n < 0)
+			return -n;
+
+		return n;
+	}
+
+	static int getRandomInt(int min, int max)
+	{
+		static std::random_device rd;
+		static std::mt19937 gen(rd());
+
+		std::uniform_int_distribution<> distribution(min, max);
+
+		return distribution(gen);
 	}
 };
 
