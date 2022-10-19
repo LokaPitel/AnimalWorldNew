@@ -646,12 +646,14 @@ class Game
 
 		virtual void eat(Entity* other)
 		{ 
+			Entity* ent = getSelf();
+
 			if (other->isPlant())
 			{ 
-				getSelf()->addHealth(Utility::limit(0, other->getHealth(), getSelf()->getPlantEatingHealthAddition()));
-				getSelf()->addStarvation(Utility::limit(0, other->getHealth(), -getSelf()->getPlantEatingHealthAddition()));
+				ent->addHealth(Utility::limit(0, other->getHealth(), ent->getPlantEatingHealthAddition()));
+				ent->subStarvation(Utility::limit(0, other->getHealth(), ent->getPlantEatingHealthAddition()));
 
-				other->addHealth(-getSelf()->getPlantEatingHealthAddition());
+				other->subHealth(getSelf()->getPlantEatingHealthAddition());
 				other->setAttacked();
 
 				if (other->getHealth() == 0)
@@ -660,9 +662,9 @@ class Game
 
 			else if (other->isPlantEatingFood())
 			{
-				getSelf()->addHealth(Utility::limit(0, other->getHealth(), getSelf()->getFoodEatingHealthAddition()));
-				getSelf()->addStarvation(Utility::limit(0, other->getHealth(), -getSelf()->getFoodEatingHealthAddition()));
-				other->addHealth(-getSelf()->getFoodEatingHealthAddition());
+				ent->addHealth(Utility::limit(0, other->getHealth(), ent->getFoodEatingHealthAddition()));
+				ent->subStarvation(Utility::limit(0, other->getHealth(), ent->getFoodEatingHealthAddition()));
+				other->subHealth(getSelf()->getFoodEatingHealthAddition());
 				other->setAttacked();
 
 				if (other->getHealth() == 0)
@@ -690,7 +692,13 @@ class Game
 			int starvation_level = animal->getStarvation();
 			int old_level = animal->getOld();
 
+			std::cout << "id: " << animal->getId() << " | health: " << health << " | starvation: " << starvation_level
+				<< " | old: " << old_level << " | (" << animal->getX() << ", " << animal->getY() << ")" << "\n";
+
 			if (old_level == animal->getMaxOld())
+				animal->setDying();
+
+			else if (starvation_level > animal->getMaxStarvation())
 				animal->setDying();
 
 			else if (animal->isAttacked())
@@ -810,9 +818,9 @@ class Game
 			if (other->isPlantEating())
 			{
 				getSelf()->addHealth(Utility::limit(0, other->getHealth(), getSelf()->getPlantEatingEatingHealthAddition()));
-				getSelf()->addStarvation(Utility::limit(0, other->getHealth(), -getSelf()->getPlantEatingEatingHealthAddition()));
+				getSelf()->subStarvation(Utility::limit(0, other->getHealth(), getSelf()->getPlantEatingEatingHealthAddition()));
 
-				other->addHealth(-getSelf()->getPlantEatingEatingHealthAddition());
+				other->subHealth(getSelf()->getPlantEatingEatingHealthAddition());
 				other->setAttacked();
 
 				if (other->getHealth() == 0)
@@ -822,10 +830,9 @@ class Game
 			else if (other->isPredatorFood())
 			{
 				getSelf()->addHealth(Utility::limit(0, other->getHealth(), getSelf()->getFoodEatingHealthAddition()));
-				getSelf()->addStarvation(Utility::limit(0, other->getHealth(), -getSelf()->getFoodEatingHealthAddition()));
-				getSelf()->addStarvation(-getSelf()->getFoodEatingHealthAddition());
+				getSelf()->subStarvation(Utility::limit(0, other->getHealth(), getSelf()->getFoodEatingHealthAddition()));
 
-				other->addHealth(-getSelf()->getFoodEatingHealthAddition());
+				other->subHealth(getSelf()->getFoodEatingHealthAddition());
 				other->setAttacked();
 
 				if (other->getHealth() == 0)
@@ -856,6 +863,9 @@ class Game
 			int old_level = animal->getOld();
 
 			if (old_level == animal->getMaxOld())
+				animal->setDying();
+
+			else if (starvation_level > animal->getMaxStarvation())
 				animal->setDying();
 			
 			// if (state is attacked) then run away
@@ -993,6 +1003,9 @@ class Game
 
 			int oldLevel = ent->getOld();
 
+			std::cout << "id: " << ent->getId() << " | health: " << ent->getHealth()
+				<< " | old: " << oldLevel << " | (" << ent->getX() << ", " << ent->getY() << ")" << "\n";
+
 			if (ent->isBorn())
 			{
 				ent->setMoving();
@@ -1004,7 +1017,7 @@ class Game
 
 			else if (oldLevel >= ent->getMinReproductionOld() && oldLevel <= ent->getMaxReproductionOld())
 			{
-				if (Utility::getRandomInt(0, 3) != 3)
+				if (Utility::getRandomInt(0, 3) == 3)
 					reproduce(getSelf());
 			}
 
@@ -1017,11 +1030,17 @@ private:
 	ConsoleView view;
 
 public:
-	static const int INITIAL_PREDATOR_COUNT = 4;
-	static const int INITIAL_PLANTEATING_COUNT = 7;
+	static const int INITIAL_PREDATOR_COUNT = 0;
+	static const int INITIAL_PLANTEATING_COUNT = 1;
+	static const int INITIAL_PLANT = 1;
+	static const int INITIAL_PLANT_FOOD_COUNT = 0;
+	static const int INITIAL_PREDATOR_FOOD_COUNT = 0;
+
+	/*static const int INITIAL_PREDATOR_COUNT = 1;
+	static const int INITIAL_PLANTEATING_COUNT = 2;
 	static const int INITIAL_PLANT = 0;
 	static const int INITIAL_PLANT_FOOD_COUNT = 3;
-	static const int INITIAL_PREDATOR_FOOD_COUNT = 2;
+	static const int INITIAL_PREDATOR_FOOD_COUNT = 2;*/
 
 	/*static const int INITIAL_PREDATOR_COUNT = 1;
 	static const int INITIAL_PLANTEATING_COUNT = 1;
@@ -1175,7 +1194,7 @@ public:
 
 int main()
 {
-	Game game(30, 30);
+	Game game(5, 5);
 
 	game.run();
 

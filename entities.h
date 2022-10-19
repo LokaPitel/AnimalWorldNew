@@ -99,6 +99,7 @@ public:
 	int getId() { return id; }
 	int getOld() { return old; }
 	int getStarvation() { return starvation; }
+	int getHealth() { return health; }
 
 	Position getPos() { return pos; }
 	int getX() { return pos.getX(); }
@@ -107,16 +108,25 @@ public:
 	void setX(int x) { pos.setX(x); }
 	void setY(int y) { pos.setY(y); }
 
-	int getHealth() { return health; }
 	void setHealth(int health_level) { health = health_level; }
+	void setStarvation(int starvationLevel) { starvation = starvationLevel; }
+	void setOld(int oldLevel) { old = oldLevel; }
 
-	void addHealth(int value) { health = Utility::limit(0, MAX_HEALTH, health + value); }
-	void addOld(int value) { old = Utility::limit(1, MAX_OLD, old + value); }
-	void addStarvation(int value) { old = Utility::limit(1, MAX_STARVATION, starvation + value); }
+	virtual void addHealth(int value) { setHealth(Utility::limit(0, MAX_HEALTH, getHealth() + value)); }
+	virtual void addOld(int value) { setOld(Utility::limit(1, MAX_OLD, getOld() + value)); }
+	virtual void addStarvation(int value) { setStarvation(Utility::limit(1, MAX_STARVATION, getStarvation() + value)); }
 
-	void incHealth() { health += 1; }
+	virtual void subHealth(int value) { setHealth(Utility::limit(0, MAX_HEALTH, health - value)); }
+	virtual void subOld(int value) { setOld(Utility::limit(1, MAX_OLD, old - value)); }
+	virtual void subStarvation(int value) { setStarvation(Utility::limit(1, MAX_STARVATION, starvation - value)); }
+
+	/*void incHealth() { health += 1; }
 	void incOld() { old += 1; }
-	void incStarvation() { starvation += 1; }
+	void incStarvation() { starvation += 1; }*/
+
+	void incHealth() { setHealth(health + 1); }
+	void incOld() { setOld(old + 1); }
+	void incStarvation() { setStarvation(starvation + 1); }
 
 	State& getState() { return state; }
 	/*void setState(State state) { state.setState(state.getState()); }
@@ -191,7 +201,7 @@ public:
 
 class PlantEating : public Animal
 {
-	static const int MAX_HEALTH = 10;
+	static const int MAX_HEALTH = 15;
 	static const int MAX_OLD = 20;
 	static const int MAX_STARVATION = 15;
 
@@ -202,7 +212,7 @@ class PlantEating : public Animal
 	static const int MAX_REPRODUCTION_OLD = 9;
 
 	static const int PLANT_EATING_HEALTH_ADDITION = 5;
-	static const int FOOD_EATING_HEALTH_ADDITION = 2;
+	static const int FOOD_EATING_HEALTH_ADDITION = 3;
 
 public:
 	PlantEating(int old_level, int starvation_level, int attack, int health_level, int xPos, int yPos) :
@@ -210,6 +220,14 @@ public:
 	PlantEating(int xPos, int yPos) : Animal(xPos, yPos, MAX_HEALTH) {}
 
 	virtual bool isPlantEating() { return true; }
+
+	virtual void addHealth(int value) { setHealth(Utility::limit(0, MAX_HEALTH, getHealth() + value)); }
+	virtual void addOld(int value) { setOld(Utility::limit(1, MAX_OLD, getOld() + value)); }
+	virtual void addStarvation(int value) { setStarvation(Utility::limit(1, MAX_STARVATION, getStarvation() + value)); }
+
+	virtual void subHealth(int value) { setHealth(Utility::limit(0, MAX_HEALTH, getHealth() - value)); }
+	virtual void subOld(int value) { setOld(Utility::limit(1, MAX_OLD, getOld() - value)); }
+	virtual void subStarvation(int value) { setStarvation(Utility::limit(1, MAX_STARVATION, getStarvation() - value)); }
 
 	virtual int getMaxStarvation() { return MAX_STARVATION; }
 	virtual int getMaxOld() { return MAX_OLD; }
@@ -249,6 +267,14 @@ public:
 
 	virtual bool isPredator() { return true; }
 
+	virtual void addHealth(int value) { setHealth(Utility::limit(0, MAX_HEALTH, getHealth() + value)); }
+	virtual void addOld(int value) { setOld(Utility::limit(1, MAX_OLD, getOld() + value)); }
+	virtual void addStarvation(int value) { setStarvation(Utility::limit(1, MAX_STARVATION, getStarvation() + value)); }
+
+	virtual void subHealth(int value) { setHealth(Utility::limit(0, MAX_HEALTH, getHealth() - value)); }
+	virtual void subOld(int value) { setOld(Utility::limit(1, MAX_OLD, getOld() - value)); }
+	virtual void subStarvation(int value) { setStarvation(Utility::limit(1, MAX_STARVATION, getStarvation() - value)); }
+
 	virtual int getMaxStarvation() { return MAX_STARVATION; }
 	virtual int getMaxOld() { return MAX_OLD; }
 	virtual int getMaxHealth() { return MAX_HEALTH; }
@@ -273,8 +299,8 @@ public:
 
 class PlantEatingFood : public Food
 {
-	static const int MAX_OLD = 9;
-	static const int MAX_HEALTH = 6;
+	static const int MAX_OLD = 20;
+	static const int MAX_HEALTH = 5;
 
 public:
 	PlantEatingFood(int old_level, int starvation_level, int health_level, int xPos, int yPos) : Food(old_level, starvation_level, health_level, xPos, yPos) {}
@@ -314,6 +340,9 @@ public:
 	Plant(int xPos, int yPos) : Entity(1, 1, MAX_HEALTH, xPos, yPos) {}
 
 	virtual bool isPlant() { return true; }
+
+	virtual void addHealth(int value) { setHealth(Utility::limit(0, MAX_HEALTH, getHealth() + value)); }
+	virtual void subHealth(int value) { setHealth(Utility::limit(0, MAX_HEALTH, getHealth() - value)); }
 
 	virtual int getMaxOld() { return MAX_OLD; }
 	virtual int getMaxHealth() { return MAX_HEALTH; }
